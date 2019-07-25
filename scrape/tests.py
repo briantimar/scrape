@@ -20,5 +20,10 @@ class ToolsTestCase(unittest.TestCase):
         self.assertEqual("https://example.com", 
                             get_base_url(url))
 
+    def test_drop_comments_and_fragments(self):
+        from .tools import drop_comments_and_fragments
+        url="https://example.com/page/?thing=2"
+        self.assertEqual(drop_comments_and_fragments(url), "https://example.com/page/")
+
 if __name__ == "__main__":
     unittest.main()
