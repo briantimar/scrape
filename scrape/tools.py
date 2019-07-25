@@ -10,7 +10,7 @@ def get_html(url):
     if r.ok:
         return r.text
     else:
-        raise ValueError("get request failed!")
+        raise ValueError("get request failed at {0}!".format(r.url))
 
 def save(url, fpath):
     """ Write html provided by url into fpath."""
@@ -35,18 +35,8 @@ def get_links(url, verbose=False):
         print("Found {0} links from {1}".format(len(links),url))
     return links
 
-def get_linked_urls(url, domain=None, verbose=False):
-    if url[-1] == '/':
-        url = url[:-1]
-    links = get_links(url, verbose=verbose)
-    urls = [link['href'] for link in links]
-    for i in range(len(urls)):
-        if urls[i][0]=='/':
-            # change rel links to absolute
-            urls[i] = url + urls[i]
-    if domain is not None:
-        urls = list(filter(lambda u: domain in u, urls))
-    return urls
+def get_protocol(url):
+    return url.split('/')[0]
 
 def get_domain_name(url):
     bits = url.split("/")
@@ -57,6 +47,29 @@ def get_domain_name(url):
     if '.' not in domain:
         raise ValueError("Domain extraction failed for url: {0}".format(url))
     return domain
+
+def get_base_url(url):
+    prot = get_protocol(url)
+    return prot + "//" + get_domain_name(url)
+
+def get_linked_urls(url, domain=None, verbose=False):
+    if url[-1] == '/':
+        url = url[:-1]
+
+    baseurl = get_base_url(url)
+    links = get_links(url, verbose=verbose)
+    #filter for href's
+    links = list(filter(lambda l: l.get('href') is not None , links ))
+
+    urls = [link['href'] for link in links]
+
+    for i in range(len(urls)):
+        if urls[i][0]=='/':
+            # change rel links to absolute
+            urls[i] = baseurl + urls[i]
+    if domain is not None:
+        urls = list(filter(lambda u: domain in u, urls))
+    return urls
 
 def travserse_site(baseurl):
     """Crawl through the site with provided base url, returning set of all unique URLs with the same 
@@ -73,12 +86,9 @@ def travserse_site(baseurl):
     import threading
 
     domain = get_domain_name(baseurl)
-    print(domain)
     urls_to_visit = Queue()
     
     todo = get_linked_urls(baseurl, domain=domain, verbose=False)
-    print(todo)
-    return
     seen = set(todo)
     modify_seen_lock = threading.Lock()
 
@@ -88,14 +98,15 @@ def travserse_site(baseurl):
     def url_processor():
         while True:
             url = urls_to_visit.get()
+            print("visiting ", url)
             if url is None:
                 # 'None' plays the role of a kill signal
                 break
             new_urls = get_linked_urls(url, domain=domain)
-            with modify_seen_lock:
-                for url in new_urls:
-                    if url not in seen:
-                        urls_to_visit.put(url)
+            for url in new_urls:
+                if url not in seen:
+                    urls_to_visit.put(url)
+                    with modify_seen_lock:
                         seen.add(url)
             # tells q that this worker is finished
             urls_to_visit.task_done()
