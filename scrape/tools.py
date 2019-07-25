@@ -2,6 +2,7 @@ import requests
 import re
 from bs4 import BeautifulSoup
 from queue import Queue
+from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
 
 def get_html(url):
@@ -52,7 +53,12 @@ def get_base_url(url):
     prot = get_protocol(url)
     return prot + "//" + get_domain_name(url)
 
-def get_linked_urls(url, domain=None, verbose=False):
+def drop_comments_and_fragments(url):
+    u = urlparse(url)
+    return "{0}://{1}{2}".format(u.scheme, u.netloc, u.path)
+
+def get_linked_urls(url, domain=None,
+                     verbose=False):
     if url[-1] == '/':
         url = url[:-1]
 
@@ -62,13 +68,15 @@ def get_linked_urls(url, domain=None, verbose=False):
     links = list(filter(lambda l: l.get('href') is not None , links ))
 
     urls = [link['href'] for link in links]
-
+  
     for i in range(len(urls)):
         if urls[i][0]=='/':
             # change rel links to absolute
             urls[i] = baseurl + urls[i]
     if domain is not None:
         urls = list(filter(lambda u: domain in u, urls))
+    urls = list(map(drop_comments_and_fragments, urls))
+
     return urls
 
 def travserse_site(baseurl):
