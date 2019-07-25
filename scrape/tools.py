@@ -38,8 +38,15 @@ def get_links(url, domain=None, verbose=False):
     return links
 
 def get_linked_urls(url, domain=None, verbose=False):
+    if url[-1] == '/':
+        url = url[:-1]
     links = get_links(url, domain=domain, verbose=verbose)
-    return [link['href'] for link in links]
+    urls = [link['href'] for link in links]
+    for i in range(len(urls)):
+        if urls[i][0]=='/':
+            # change rel links to absolute
+            urls[i] = url + urls[i]
+    return urls
 
 def get_domain_name(url):
     bits = url.split("/")

@@ -1,8 +1,9 @@
 from scrape.tools import get_links
-
+from scrape.tools import save
+from scrape.tools import travserse_site
 
 domain = "dominiccummings.com"
 baseurl = "https://" + domain
-links = get_links(baseurl,domain=domain)
-for link in links:
-    print(link.get('href'))
+
+baseurl = "https://briantimar.github.io"
+# seen = travserse_site(baseurl)
