@@ -23,16 +23,14 @@ def get_parsed(url):
     text = get_html(url)
     return BeautifulSoup(text, 'html.parser')
 
-def get_links(url, domain=None, verbose=False):
+def get_links(url, verbose=False):
     """List of all links provided at the given url. 
         If domain is provided, only those at the given domain (containing it as a substring) 
         are considered."""
     parsed = get_parsed(url)
-    if domain is None:
-        links = parsed.find_all('a')
-    else:
-        href = re.compile(domain)
-        links = parsed.find_all('a', href=href)
+    ## todo: regex for this...
+    links = parsed.find_all('a')
+    
     if verbose:
         print("Found {0} links from {1}".format(len(links),url))
     return links
@@ -40,12 +38,14 @@ def get_links(url, domain=None, verbose=False):
 def get_linked_urls(url, domain=None, verbose=False):
     if url[-1] == '/':
         url = url[:-1]
-    links = get_links(url, domain=domain, verbose=verbose)
+    links = get_links(url, verbose=verbose)
     urls = [link['href'] for link in links]
     for i in range(len(urls)):
         if urls[i][0]=='/':
             # change rel links to absolute
             urls[i] = url + urls[i]
+    if domain is not None:
+        urls = list(filter(lambda u: domain in u, urls))
     return urls
 
 def get_domain_name(url):
@@ -73,10 +73,12 @@ def travserse_site(baseurl):
     import threading
 
     domain = get_domain_name(baseurl)
+    print(domain)
     urls_to_visit = Queue()
     
     todo = get_linked_urls(baseurl, domain=domain, verbose=False)
     print(todo)
+    return
     seen = set(todo)
     modify_seen_lock = threading.Lock()
 

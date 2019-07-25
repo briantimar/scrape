@@ -6,4 +6,4 @@ domain = "dominiccummings.com"
 baseurl = "https://" + domain
 
 baseurl = "https://briantimar.github.io"
-# seen = travserse_site(baseurl)
+seen = travserse_site(baseurl)
