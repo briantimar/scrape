@@ -79,7 +79,7 @@ def get_linked_urls(url, domain=None,
 
     return urls
 
-def travserse_site(baseurl):
+def travserse_site(baseurl, num_worker_threads=20):
     """Crawl through the site with provided base url, returning set of all unique URLs with the same 
     domain name.
         - for each link on page:
@@ -97,7 +97,7 @@ def travserse_site(baseurl):
     urls_to_visit = Queue()
     
     todo = get_linked_urls(baseurl, domain=domain, verbose=False)
-    seen = set(todo)
+    seen = set()
     modify_seen_lock = threading.Lock()
 
     for url in todo:
@@ -116,10 +116,9 @@ def travserse_site(baseurl):
                     urls_to_visit.put(url)
                     with modify_seen_lock:
                         seen.add(url)
-            # tells q that this worker is finished
+        # tells q that this worker is finished
             urls_to_visit.task_done()
 
-    num_worker_threads = 10
     threads = []
     for __ in range(num_worker_threads):
         t = threading.Thread(target=url_processor)
